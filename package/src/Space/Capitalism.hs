@@ -8,6 +8,9 @@ import Control.Monad
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import System.IO
+import qualified Data.Map as Map
+
+import Space.Resource
 
 main :: IO ()
 main = do
@@ -42,7 +45,8 @@ main = do
 -- | The information relevant for rendering
 data Scene
   = Scene
-  { sceneLocation :: Location -- ^ Where the player is.
+  { sceneInventory :: Inventory
+  , sceneLocation :: Location -- ^ Where the player is.
   , sceneTick :: Int -- ^ Elapsed ticks.
   } deriving stock (Show)
 
@@ -54,7 +58,8 @@ render =
 -- | The entire state of the game.
 data State
   = State
-  { stateLocation :: Location -- ^ Where the player is.
+  { stateInventory :: Inventory
+  , stateLocation :: Location -- ^ Where the player is.
   , stateTick :: Int -- ^ Elapsed ticks.
   }
 
@@ -62,7 +67,8 @@ data State
 stateToScene :: State -> Scene
 stateToScene state =
   Scene
-    { sceneLocation = stateLocation state
+    { sceneInventory = stateInventory state
+    , sceneLocation = stateLocation state
     , sceneTick = stateTick state
     }
 
@@ -76,29 +82,52 @@ data Location
   deriving stock (Show)
 
 moment :: Event () -> Event Char -> MomentIO (Behavior Scene)
-moment tickE charE = do
+moment tickE charE = mdo
   tickB :: Behavior Int <-
     accumB 0 ((+1) <$ tickE)
 
-  -- Current location: pressing 1,2,3,4,5 moves to that location immediately.
-  locationB :: Behavior Location <-
-    stepper
-      Location1
-      (foldr
-        (unionWith const)
-        never
-        [ Location1 <$ filterE (== '1') charE
-        , Location2 <$ filterE (== '2') charE
-        , Location3 <$ filterE (== '3') charE
-        , Location4 <$ filterE (== '4') charE
-        , Location5 <$ filterE (== '5') charE
+  -- Player inventory.
+  inventoryB :: Behavior Inventory <-
+    accumB
+      initialInventory
+      (unions
+        [ undefined travelE
         ])
+
+  -- Current location: pressing 1,2,3,4,5 moves to that location immediately.
+  let
+    locationE :: Event Location
+    locationE =
+      snd <$> travelE
+  locationB :: Behavior Location <-
+    stepper initialLocation locationE
+
+  let
+    travelE :: Event (Location, Location)
+    travelE =
+      leftmostE
+        (map
+          (\(destination, char) ->
+            filterJust
+              ((\location inventory -> do
+                guard (mayTravel inventory location destination)
+                pure (location, destination))
+                <$> locationB
+                <*> inventoryB
+                <@  filterE (== char) charE))
+          [ (Location1, '1')
+          , (Location2, '2')
+          , (Location3, '3')
+          , (Location4, '4')
+          , (Location5, '5')
+          ])
 
   let
     stateB :: Behavior State
     stateB =
       State
-        <$> locationB
+        <$> inventoryB
+        <*> locationB
         <*> tickB
 
   let
@@ -107,3 +136,28 @@ moment tickE charE = do
       stateToScene <$> stateB
 
   pure sceneB
+
+mayTravel
+  :: Inventory
+  -> Location -- ^ Source
+  -> Location -- ^ Destination
+  -> Bool
+mayTravel _ _ _ =
+  True
+
+initialInventory :: Inventory
+initialInventory =
+  Map.fromList
+    [ (Energy, 100)
+    , (Food, 100)
+    ]
+
+initialLocation :: Location
+initialLocation =
+  Location1
+
+-- | Collapse a list of events to an event that fires with the leftmost event's
+-- value (if any).
+leftmostE :: [Event a] -> Event a
+leftmostE =
+  foldr (unionWith const) never

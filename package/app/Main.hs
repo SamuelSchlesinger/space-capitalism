@@ -1,4 +1,6 @@
 module Main where
 
+import qualified Space.Capitalism
+
 main :: IO ()
-main = pure ()
+main = Space.Capitalism.main

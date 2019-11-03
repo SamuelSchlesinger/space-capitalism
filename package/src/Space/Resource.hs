@@ -2,16 +2,15 @@ module Space.Resource where
 
 import Numeric.Natural
 import Data.Map (Map)
-import Data.Set (Set)
 --import qualified Data.Set as Set
 
-data Resource = Energy | Food | Human (Set Skill)
+data Resource = Energy | Food | Human Skill
 
 data Science = Biology | Sociology | Physics | Computer | Chemistry
 
 data Machine = Power | Weapons | Shields
 
-data Skill = Scientist (Set Science) | Machinist (Set Machine) 
+data Skill = Scientist Science | Machinist Machine 
 
 type Recipe = Map Resource Natural -> Map Resource Natural
 

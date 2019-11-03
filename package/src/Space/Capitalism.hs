@@ -90,13 +90,16 @@ moment tickE charE = mdo
       (unions
         [ -- Energy goes down when you travel.
           (\Graph{..} (source, destination) energy ->
-            energy - fromJust (distance source destination))
+            energy - ceiling (fromJust (distance source destination)))
           <$> graphB <@> travelE
         ])
 
-  -- Food is always 100.
+  -- Food goes down by one every tick of time.
   foodB :: Behavior Natural <-
-    pure (pure 100)
+    accumB
+      1000
+      ((\x -> x - 1) <$ tickE)
+   -- pure (pure 100)
 
   -- The inventory map behavior is a boilerplate applicative combination of the
   -- individual resource behaviors

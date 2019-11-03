@@ -18,5 +18,5 @@ mayTravel
   -> Graph Location
   -> Bool
 mayTravel energy l1 l2 Graph{..} = case distance l1 l2 of
-  Just cost -> energy >= cost
+  Just cost -> fromIntegral energy >= cost
   _ -> False

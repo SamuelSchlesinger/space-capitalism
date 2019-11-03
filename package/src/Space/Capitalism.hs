@@ -5,6 +5,7 @@ module Space.Capitalism
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
+import Numeric.Natural
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import System.IO
@@ -34,13 +35,12 @@ main = do
       sceneE <- changes sceneB
       reactimate' (fmap (fmap render) sceneE)
 
-  -- Handle user-input (there isn't any yet, so we just sleep forever).
+  -- Handle user input forever
   hSetBuffering stdin NoBuffering
   bracket_
     (hSetEcho stdin False)
     (hSetEcho stdin True)
-    (forever do
-      getChar >>= fireChar)
+    (forever (getChar >>= fireChar))
 
 -- | The information relevant for rendering
 data Scene
@@ -86,15 +86,36 @@ moment tickE charE = mdo
   tickB :: Behavior Int <-
     accumB 0 ((+1) <$ tickE)
 
-  -- Player inventory.
-  inventoryB :: Behavior Inventory <-
+  -- Energy.
+  energyB :: Behavior Natural <-
     accumB
-      initialInventory
+      initialEnergy
       (unions
-        [ undefined travelE
+        [ -- Energy goes down when you travel.
+          (\(source, destination) energy ->
+            energy - travelCost source destination)
+          <$> travelE
         ])
 
-  -- Current location: pressing 1,2,3,4,5 moves to that location immediately.
+  -- Food is always 100.
+  foodB :: Behavior Natural <-
+    pure (pure 100)
+
+  -- The inventory map behavior is a boilerplate applicative combination of the
+  -- individual resource behaviors
+  let
+    inventoryB :: Behavior Inventory
+    inventoryB =
+      Map.fromList <$>
+        traverse
+          (\(resource, amountB) ->
+            (resource ,) <$> amountB)
+          [ (Energy, energyB)
+          , (Food, foodB)
+          ]
+
+  -- Player location event: emits a location every time the player travels to
+  -- it.
   let
     locationE :: Event Location
     locationE =
@@ -102,6 +123,8 @@ moment tickE charE = mdo
   locationB :: Behavior Location <-
     stepper initialLocation locationE
 
+  -- Travel event: emits a (source, destination) pair every time the player
+  -- successfully travels from source to destination.
   let
     travelE :: Event (Location, Location)
     travelE =
@@ -109,11 +132,11 @@ moment tickE charE = mdo
         (map
           (\(destination, char) ->
             filterJust
-              ((\location inventory -> do
-                guard (mayTravel inventory location destination)
+              ((\location energy -> do
+                guard (mayTravel energy location destination)
                 pure (location, destination))
                 <$> locationB
-                <*> inventoryB
+                <*> energyB
                 <@  filterE (== char) charE))
           [ (Location1, '1')
           , (Location2, '2')
@@ -138,19 +161,21 @@ moment tickE charE = mdo
   pure sceneB
 
 mayTravel
-  :: Inventory
+  :: Natural -- ^ Energy
   -> Location -- ^ Source
   -> Location -- ^ Destination
   -> Bool
 mayTravel _ _ _ =
   True
 
-initialInventory :: Inventory
-initialInventory =
-  Map.fromList
-    [ (Energy, 100)
-    , (Food, 100)
-    ]
+-- | How much does it cost to travel from one location to another?
+travelCost :: Location -> Location -> Natural
+travelCost _ _ =
+  1
+
+initialEnergy :: Natural
+initialEnergy =
+  100
 
 initialLocation :: Location
 initialLocation =

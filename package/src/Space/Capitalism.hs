@@ -2,9 +2,11 @@ module Space.Capitalism
   ( main
   ) where
 
+import Data.Maybe
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
+import Numeric.Natural
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import System.IO
@@ -36,13 +38,12 @@ main = do
       sceneE <- changes sceneB
       reactimate' (fmap (fmap render) sceneE)
 
-  -- Handle user-input (there isn't any yet, so we just sleep forever).
+  -- Handle user input forever
   hSetBuffering stdin NoBuffering
   bracket_
     (hSetEcho stdin False)
     (hSetEcho stdin True)
-    (forever do
-      getChar >>= fireChar)
+    (forever (getChar >>= fireChar))
 
 -- | The information relevant for rendering
 data Scene
@@ -82,15 +83,36 @@ moment tickE charE = mdo
   graphB :: Behavior (Graph Location) <-
     pure (pure initialGraph)
 
-  -- Player inventory.
-  inventoryB :: Behavior Inventory <-
+  -- Energy.
+  energyB :: Behavior Natural <-
     accumB
-      initialInventory
+      initialEnergy
       (unions
-        [ undefined travelE
+        [ -- Energy goes down when you travel.
+          (\Graph{..} (source, destination) energy ->
+            energy - fromJust (distance source destination))
+          <$> graphB <@> travelE
         ])
 
-  -- Current location: pressing 1,2,3,4,5 moves to that location immediately.
+  -- Food is always 100.
+  foodB :: Behavior Natural <-
+    pure (pure 100)
+
+  -- The inventory map behavior is a boilerplate applicative combination of the
+  -- individual resource behaviors
+  let
+    inventoryB :: Behavior Inventory
+    inventoryB =
+      Map.fromList <$>
+        traverse
+          (\(resource, amountB) ->
+            (resource ,) <$> amountB)
+          [ (Energy, energyB)
+          , (Food, foodB)
+          ]
+
+  -- Player location event: emits a location every time the player travels to
+  -- it.
   let
     locationE :: Event Location
     locationE =
@@ -98,6 +120,8 @@ moment tickE charE = mdo
   locationB :: Behavior Location <-
     stepper initialLocation locationE
 
+  -- Travel event: emits a (source, destination) pair every time the player
+  -- successfully travels from source to destination.
   let
     travelE :: Event (Location, Location)
     travelE =
@@ -105,11 +129,11 @@ moment tickE charE = mdo
         (map
           (\(destination, char) ->
             filterJust
-              ((\location inventory graph -> do
-                guard (mayTravel inventory location destination graph)
+              ((\location energy graph -> do
+                guard (mayTravel energy location destination graph)
                 pure (location, destination))
                 <$> locationB
-                <*> inventoryB
+                <*> energyB
                 <*> graphB
                 <@  filterE (== char) charE))
           [ (Location1, '1')
@@ -134,12 +158,9 @@ moment tickE charE = mdo
 
   pure sceneB
 
-initialInventory :: Inventory
-initialInventory =
-  Map.fromList
-    [ (Energy, 100)
-    , (Food, 100)
-    ]
+initialEnergy :: Natural
+initialEnergy =
+  100
 
 initialLocation :: Location
 initialLocation =

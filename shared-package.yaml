@@ -55,7 +55,7 @@
     - -O2
     - -threaded
     - -rtsopts
-    - '"-with-rtsopts=-N -T"'
+    - '"-with-rtsopts=-N"'
 
 - &test
   ghc-options:
@@ -65,7 +65,7 @@
     - -Wincomplete-patterns
     - -O2
     - -threaded
-    - '"-with-rtsopts=-N -T"'
+    - '"-with-rtsopts=-N"'
 
 - &library
   ghc-options:

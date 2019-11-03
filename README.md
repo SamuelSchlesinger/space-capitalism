@@ -1,4 +1,8 @@
-# Example Project
+# Space Capitalism
 
-This is an example multi-package [stack](https://docs.haskellstack.org/en/stable/README/) project,
-so that I don't have to recreate this every time I want to make a new one.
+This is a game wherein the player is an interplanetary trader.
+They will go from system to system,  planet to planet, perhaps
+even galaxy to galaxy, and buy and sell goods wherever they go.
+
+At each planet, they will have to secure the rights to trade and
+make port. Some planets may be cooperative, while others may be resistant.

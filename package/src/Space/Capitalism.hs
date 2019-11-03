@@ -10,7 +10,9 @@ import Reactive.Banana.Frameworks
 import System.IO
 import qualified Data.Map as Map
 
+import Space.Graph
 import Space.Resource
+import Space.Location
 
 main :: IO ()
 main = do
@@ -72,19 +74,13 @@ stateToScene state =
     , sceneTick = stateTick state
     }
 
--- | Where the player is.
-data Location
-  = Location1
-  | Location2
-  | Location3
-  | Location4
-  | Location5
-  deriving stock (Show)
-
 moment :: Event () -> Event Char -> MomentIO (Behavior Scene)
 moment tickE charE = mdo
   tickB :: Behavior Int <-
     accumB 0 ((+1) <$ tickE)
+
+  graphB :: Behavior (Graph Location) <-
+    pure (pure initialGraph)
 
   -- Player inventory.
   inventoryB :: Behavior Inventory <-
@@ -109,11 +105,12 @@ moment tickE charE = mdo
         (map
           (\(destination, char) ->
             filterJust
-              ((\location inventory -> do
-                guard (mayTravel inventory location destination)
+              ((\location inventory graph -> do
+                guard (mayTravel inventory location destination graph)
                 pure (location, destination))
                 <$> locationB
                 <*> inventoryB
+                <*> graphB
                 <@  filterE (== char) charE))
           [ (Location1, '1')
           , (Location2, '2')
@@ -137,14 +134,6 @@ moment tickE charE = mdo
 
   pure sceneB
 
-mayTravel
-  :: Inventory
-  -> Location -- ^ Source
-  -> Location -- ^ Destination
-  -> Bool
-mayTravel _ _ _ =
-  True
-
 initialInventory :: Inventory
 initialInventory =
   Map.fromList
@@ -155,6 +144,10 @@ initialInventory =
 initialLocation :: Location
 initialLocation =
   Location1
+
+initialGraph :: Graph Location
+initialGraph = Graph 
+  { distance = \l1 l2 -> if l1 == l2 then Just 0 else Just 1 }
 
 -- | Collapse a list of events to an event that fires with the leftmost event's
 -- value (if any).

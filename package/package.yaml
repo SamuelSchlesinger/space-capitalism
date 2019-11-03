@@ -11,6 +11,7 @@ library:
     - src
   dependencies:
     - base
+    - reactive-banana
   <<: *library
 
 executables:

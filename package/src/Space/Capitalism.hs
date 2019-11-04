@@ -12,6 +12,8 @@ import Reactive.Banana.Frameworks
 import System.IO
 import qualified Data.Map as Map
 
+import Space.State
+import Space.Scene
 import Space.Graph
 import Space.Resource
 import Space.Location
@@ -44,36 +46,6 @@ main = do
     (hSetEcho stdin False)
     (hSetEcho stdin True)
     (forever (getChar >>= fireChar))
-
--- | The information relevant for rendering
-data Scene
-  = Scene
-  { sceneInventory :: Inventory
-  , sceneLocation :: Location -- ^ Where the player is.
-  , sceneTick :: Int -- ^ Elapsed ticks.
-  } deriving stock (Show)
-
--- | Render a scene to the screen.
-render :: Scene -> IO ()
-render =
-  print
-
--- | The entire state of the game.
-data State
-  = State
-  { stateInventory :: Inventory
-  , stateLocation :: Location -- ^ Where the player is.
-  , stateTick :: Int -- ^ Elapsed ticks.
-  }
-
--- | Cull the game state down to what's relevant for rendering.
-stateToScene :: State -> Scene
-stateToScene state =
-  Scene
-    { sceneInventory = stateInventory state
-    , sceneLocation = stateLocation state
-    , sceneTick = stateTick state
-    }
 
 moment :: Event () -> Event Char -> MomentIO (Behavior Scene)
 moment tickE charE = mdo

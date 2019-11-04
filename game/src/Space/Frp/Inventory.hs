@@ -7,10 +7,13 @@ import Space.Resource
 import Space.Frp.Food
 import Space.Frp.Energy
 
+import Data.Functor.Identity
 import qualified Data.Map as Map
 
-makeInventoryBB :: MonadMoment m => Event (Location, Location) -> Event () -> Behavior (Graph Location) -> m (Inventory Behavior)
+makeInventoryBB :: MonadMoment m => Event (Location, Location) -> Event () -> Behavior (Graph Location) -> m (Inventory Behavior, Behavior (Inventory Identity))
 makeInventoryBB travelE tickE graphB = do
   foodB <- makeFoodB tickE
   energyB <- makeEnergyB travelE graphB
-  return . Map.fromList $ [(Energy, energyB), (Food, foodB)] <> ((,) <$> tail [Food .. maxBound] <*> repeat 0)
+  let inventoryBB =  Map.fromList $ [(Energy, energyB), (Food, foodB)] <> ((,) <$> tail [Food .. maxBound] <*> [0])
+  let inventoryB = Map.foldrWithKey (\res b m -> Map.insert res <$> fmap Identity b <*> m) (pure Map.empty) inventoryBB
+  return (inventoryBB, inventoryB)

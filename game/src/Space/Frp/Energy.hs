@@ -10,11 +10,10 @@ import Space.Graph (Graph(..))
 
 makeEnergyB
   :: MonadMoment m
-  => Natural
-  -> Event (loc, loc)
+  => Event (loc, loc)
   -> Behavior (Graph loc)
   -> m (Behavior Natural)
-makeEnergyB initialEnergy travelE graphB =
+makeEnergyB travelE graphB =
   accumB
     initialEnergy
     (unions
@@ -23,3 +22,6 @@ makeEnergyB initialEnergy travelE graphB =
           energy - ceiling (fromJust (distance source destination)))
         <$> graphB <@> travelE
       ])
+
+initialEnergy :: Natural
+initialEnergy = 100

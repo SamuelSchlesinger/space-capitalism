@@ -132,10 +132,6 @@ initialEnergy :: Natural
 initialEnergy =
   100
 
-initialLocation :: Location
-initialLocation =
-  Location1
-
 initialGraph :: Graph Location
 initialGraph = Graph 
   { distance = \l1 l2 -> if l1 == l2 then Just 0 else Just 1 }

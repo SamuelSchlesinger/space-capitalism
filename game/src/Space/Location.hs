@@ -4,12 +4,16 @@ import Numeric.Natural
 import Space.Graph
 
 data Location =
-    Location1
-  | Location2
-  | Location3 
-  | Location4
-  | Location5
+    Xarkov
+  | Kalinpol
+  | Partook 
+  | Yenlo
+  | Karkharov
   deriving (Show, Eq, Enum, Bounded, Ord)
+
+initialLocation :: Location
+initialLocation =
+  Kalinpol
 
 mayTravel
   :: Natural

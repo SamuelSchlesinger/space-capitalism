@@ -74,7 +74,8 @@ moment tickE charE = mdo
   (inventoryBB, inventoryB) <- makeInventoryBB travelE tickE graphB
   let energyB = inventoryBB Map.! Energy
   (locationE, locationB) <- makeLocationEB initialLocation travelE
-  let travelE = makeTravelE charE energyB graphB locationB
+  let travelAttemptE = makeTravelAttemptE charE energyB graphB locationB
+  let travelE = makeTravelE travelAttemptE
 
   let
     stateB :: Behavior State
@@ -94,6 +95,8 @@ moment tickE charE = mdo
     outputE =
       mconcat
         [ (\loc -> ["You arrived at " ++ show loc]) <$> locationE
+        , ["You don't have enough energy to travel there."] <$
+            filterE (== TravelAttempt'NotEnoughEnergy) travelAttemptE
         ]
 
   pure (sceneB, outputE)

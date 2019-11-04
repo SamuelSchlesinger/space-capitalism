@@ -2,7 +2,6 @@ module Space.Capitalism
   ( main
   ) where
 
-import Data.Maybe
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
@@ -12,11 +11,12 @@ import Reactive.Banana.Frameworks
 import System.IO
 import qualified Data.Map as Map
 
-import Space.State
-import Space.Scene
+import Space.Frp
 import Space.Graph
-import Space.Resource
 import Space.Location
+import Space.Resource
+import Space.Scene
+import Space.State
 
 main :: IO ()
 main = do
@@ -39,7 +39,7 @@ main = do
   -- bought a lot and increase the demand for good A, meaning that its
   -- price should slowly rise to make this arbitrage opportunity less and
   -- less lucrative. similarly, planet Y should have the supply increase
-  -- and thus the price decrease, coming at you from both angles. 
+  -- and thus the price decrease, coming at you from both angles.
 
   (void . forkIO . forever) do
     fireTick ()
@@ -67,29 +67,12 @@ main = do
 
 moment :: Event () -> Event Char -> MomentIO (Behavior Scene)
 moment tickE charE = mdo
-  tickB :: Behavior Int <-
-    accumB 0 ((+1) <$ tickE)
-
-  graphB :: Behavior (Graph Location) <-
-    pure (pure initialGraph)
-
-  -- Energy.
-  energyB :: Behavior Natural <-
-    accumB
-      initialEnergy
-      (unions
-        [ -- Energy goes down when you travel.
-          (\Graph{..} (source, destination) energy ->
-            energy - ceiling (fromJust (distance source destination)))
-          <$> graphB <@> travelE
-        ])
-
-  -- Food goes down by one every tick of time.
-  foodB :: Behavior Natural <-
-    accumB
-      1000
-      ((\x -> x - 1) <$ tickE)
-   -- pure (pure 100)
+  tickB <- makeTickB tickE
+  graphB <- makeGraphB initialGraph
+  energyB <- makeEnergyB initialEnergy travelE graphB
+  foodB <- makeFoodB initialFood tickE
+  (_locationE, locationB) <- makeLocationEB initialLocation travelE
+  let travelE = makeTravelE charE energyB graphB locationB
 
   -- The inventory map behavior is a boilerplate applicative combination of the
   -- individual resource behaviors
@@ -103,33 +86,6 @@ moment tickE charE = mdo
           [ (Energy, energyB)
           , (Food, foodB)
           ]
-
-  -- Player location event: emits a location every time the player travels to
-  -- it.
-  let
-    locationE :: Event Location
-    locationE =
-      snd <$> travelE
-  locationB :: Behavior Location <-
-    stepper initialLocation locationE
-
-  -- Travel event: emits a (source, destination) pair every time the player
-  -- successfully travels from source to destination.
-  let
-    travelE :: Event (Location, Location)
-    travelE =
-      leftmostE
-        (map
-          (\(destination, char) ->
-            filterJust
-              ((\location energy graph -> do
-                guard (mayTravel energy location destination graph)
-                pure (location, destination))
-                <$> locationB
-                <*> energyB
-                <*> graphB
-                <@  filterE (== char) charE))
-            ([ minBound .. maxBound ] `zip` ['1' .. ]))
 
   let
     stateB :: Behavior State
@@ -150,12 +106,10 @@ initialEnergy :: Natural
 initialEnergy =
   100
 
-initialGraph :: Graph Location
-initialGraph = Graph 
-  { distance = \l1 l2 -> if l1 == l2 then Just 0 else Just 1 }
+initialFood :: Natural
+initialFood =
+  100
 
--- | Collapse a list of events to an event that fires with the leftmost event's
--- value (if any).
-leftmostE :: [Event a] -> Event a
-leftmostE =
-  foldr (unionWith const) never
+initialGraph :: Graph Location
+initialGraph = Graph
+  { distance = \l1 l2 -> if l1 == l2 then Just 0 else Just 1 }

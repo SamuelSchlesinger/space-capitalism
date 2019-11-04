@@ -6,7 +6,7 @@ import Space.Graph
 data Location =
     Xarkov
   | Kalinpol
-  | Partook 
+  | Partook
   | Yenlo
   | Karkharov
   deriving (Show, Eq, Enum, Bounded, Ord)
@@ -17,9 +17,9 @@ initialLocation =
 
 mayTravel
   :: Natural
-  -> Location -- ^ Source
-  -> Location -- ^ Destination
-  -> Graph Location
+  -> loc -- ^ Source
+  -> loc -- ^ Destination
+  -> Graph loc
   -> Bool
 mayTravel energy l1 l2 Graph{..} = case distance l1 l2 of
   Just cost -> fromIntegral energy >= cost

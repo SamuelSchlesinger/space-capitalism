@@ -111,12 +111,7 @@ moment tickE charE = mdo
                 <*> energyB
                 <*> graphB
                 <@  filterE (== char) charE))
-          [ (Location1, '1')
-          , (Location2, '2')
-          , (Location3, '3')
-          , (Location4, '4')
-          , (Location5, '5')
-          ])
+            ([ minBound .. maxBound ] `zip` ['1' .. ]))
 
   let
     stateB :: Behavior State

@@ -1,6 +1,6 @@
 _common: !include "../shared-package.yaml"
 
-name: package
+name: game
 <<: *common
 
 dependencies:
@@ -20,7 +20,7 @@ executables:
     main: Main.hs
     source-dirs: app
     dependencies:
-      - package
+      - game
     <<: *executable
 
 tests:
@@ -28,5 +28,5 @@ tests:
     main: Test.hs
     source-dirs: test
     dependencies:
-      - package
+      - game
     <<: *test

@@ -1,5 +1,5 @@
 resolver: lts-14.12
 packages:
-- ./package
+- ./game
 extra-deps:
   - reactive-banana-1.2.1.0

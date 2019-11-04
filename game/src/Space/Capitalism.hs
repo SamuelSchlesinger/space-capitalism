@@ -73,7 +73,7 @@ moment tickE charE = mdo
   graphB <- makeGraphB
   (inventoryBB, inventoryB) <- makeInventoryBB travelE tickE graphB
   let energyB = inventoryBB Map.! Energy
-  (_locationE, locationB) <- makeLocationEB initialLocation travelE
+  (locationE, locationB) <- makeLocationEB initialLocation travelE
   let travelE = makeTravelE charE energyB graphB locationB
 
   let
@@ -92,6 +92,8 @@ moment tickE charE = mdo
   let
     outputE :: Event [String]
     outputE =
-      never
+      mconcat
+        [ (\loc -> ["You arrived at " ++ show loc]) <$> locationE
+        ]
 
   pure (sceneB, outputE)

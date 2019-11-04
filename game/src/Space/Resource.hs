@@ -4,6 +4,8 @@ import Numeric.Natural
 import Data.Map (Map)
 --import qualified Data.Set as Set
 
+import Space.HKD
+
 data Resource = Energy | Food | Human Skill
   deriving stock (Eq, Ord, Show)
 
@@ -30,7 +32,7 @@ data Skill = Scientist Science | Machinist Machine
 
 instance Enum Skill where
   fromEnum (Scientist s) = fromEnum s
-  fromEnum (Machinist m) = 5 + fromEnum m 
+  fromEnum (Machinist m) = 5 + fromEnum m
   toEnum n | n <= 4 = Scientist (toEnum n)
            | otherwise = Machinist (toEnum (n - 5))
 
@@ -40,4 +42,4 @@ instance Bounded Skill where
 
 type Recipe = Map Resource Natural -> Map Resource Natural
 
-type Inventory f = Map Resource (f Natural)
+type Inventory f = Map Resource (HKD f Natural)

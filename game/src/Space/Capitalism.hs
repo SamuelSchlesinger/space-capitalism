@@ -11,7 +11,6 @@ import System.IO
 import qualified Data.Map as Map
 
 import Space.Frp
-import Space.Graph
 import Space.Location
 import Space.Resource
 import Space.Scene
@@ -67,7 +66,7 @@ main = do
 moment :: Event () -> Event Char -> MomentIO (Behavior Scene)
 moment tickE charE = mdo
   tickB <- makeTickB tickE
-  graphB <- makeGraphB initialGraph
+  graphB <- makeGraphB
   (inventoryBB, inventoryB) <- makeInventoryBB travelE tickE graphB
   let energyB = inventoryBB Map.! Energy
   (_locationE, locationB) <- makeLocationEB initialLocation travelE
@@ -87,7 +86,3 @@ moment tickE charE = mdo
       stateToScene <$> stateB
 
   pure sceneB
-
-initialGraph :: Graph Location
-initialGraph = Graph
-  { distance = \l1 l2 -> if l1 == l2 then Just 0 else Just 1 }

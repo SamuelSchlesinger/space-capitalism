@@ -5,6 +5,7 @@ module Space.Capitalism
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
+import Data.Foldable
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import System.IO
@@ -45,16 +46,19 @@ main = do
 
   actuate =<<
     compile do
-      -- Define the game and extract a time-varying scene to render
+      -- Define the game and extract a time-varying scene to render and event
+      -- of "output" (currently just strings to display)
       charE <- fromAddHandler charAddHandler
       tickE <- fromAddHandler tickAddHandler
-      sceneB <- moment tickE charE
+      (sceneB, outputE) <- moment tickE charE
       -- Render the initial scene...
       initialScene <- valueB sceneB
       liftIO (render initialScene)
       -- ...and every scene thereafter
       sceneE <- changes sceneB
       reactimate' (fmap (fmap render) sceneE)
+      -- ...and also display every output string
+      reactimate (traverse_ putStrLn <$> outputE)
 
   -- Handle user input forever
   hSetBuffering stdin NoBuffering
@@ -63,7 +67,7 @@ main = do
     (hSetEcho stdin True)
     (forever (getChar >>= fireChar))
 
-moment :: Event () -> Event Char -> MomentIO (Behavior Scene)
+moment :: Event () -> Event Char -> MomentIO (Behavior Scene, Event [String])
 moment tickE charE = mdo
   tickB <- makeTickB tickE
   graphB <- makeGraphB
@@ -85,4 +89,9 @@ moment tickE charE = mdo
     sceneB =
       stateToScene <$> stateB
 
-  pure sceneB
+  let
+    outputE :: Event [String]
+    outputE =
+      never
+
+  pure (sceneB, outputE)

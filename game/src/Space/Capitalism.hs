@@ -5,7 +5,6 @@ module Space.Capitalism
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
-import Data.Functor.Identity
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import System.IO
@@ -69,24 +68,10 @@ moment :: Event () -> Event Char -> MomentIO (Behavior Scene)
 moment tickE charE = mdo
   tickB <- makeTickB tickE
   graphB <- makeGraphB initialGraph
-  inventoryBB <- makeInventoryBB travelE tickE graphB
+  (inventoryBB, inventoryB) <- makeInventoryBB travelE tickE graphB
   let energyB = inventoryBB Map.! Energy
-  let foodB   = inventoryBB Map.! Food
   (_locationE, locationB) <- makeLocationEB initialLocation travelE
   let travelE = makeTravelE charE energyB graphB locationB
-
-  -- The inventory map behavior is a boilerplate applicative combination of the
-  -- individual resource behaviors
-  let
-    inventoryB :: Behavior (Inventory Identity)
-    inventoryB =
-      Map.fromList <$>
-        traverse
-          (\(resource, amountB) ->
-            (resource ,) <$> (Identity <$> amountB))
-          [ (Energy, energyB)
-          , (Food, foodB)
-          ]
 
   let
     stateB :: Behavior State

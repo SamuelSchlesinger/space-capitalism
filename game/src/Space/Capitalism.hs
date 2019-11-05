@@ -71,7 +71,7 @@ moment :: Event () -> Event Char -> MomentIO (Behavior Scene, Event [String])
 moment tickE charE = mdo
   tickB <- makeTickB tickE
   graphB <- makeGraphB
-  (inventoryBB, inventoryB) <- makeInventoryBB travelE tickE graphB
+  (inventoryBB, inventoryB) <- makeInventoryBB travelE tickE
   let energyB = inventoryBB Map.! Energy
   (locationE, locationB) <- makeLocationEB initialLocation travelE
   let travelAttemptE = makeTravelAttemptE charE energyB graphB locationB

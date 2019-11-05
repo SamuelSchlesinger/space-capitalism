@@ -2,6 +2,7 @@ module Space.Frp.Location
   ( makeLocationEB
   ) where
 
+import Numeric.Natural
 import Reactive.Banana
 
 -- Player location.
@@ -9,7 +10,7 @@ makeLocationEB
   :: forall loc m.
      MonadMoment m
   => loc -- ^ Initial location.
-  -> Event (loc, loc) -- ^ Travel event.
+  -> Event (loc, loc, Natural) -- ^ Travel event.
   -> m (Event loc, Behavior loc)
 makeLocationEB initialLocation travelE =
   (locationE ,) <$>
@@ -18,4 +19,4 @@ makeLocationEB initialLocation travelE =
   where
     locationE :: Event loc
     locationE =
-      snd <$> travelE
+      (\(_source, destination, _distance) -> destination) <$> travelE

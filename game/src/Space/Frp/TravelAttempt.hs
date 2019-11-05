@@ -14,7 +14,7 @@ data TravelAttempt loc
   -- | Not enough energy to travel.
   = TravelAttempt'NotEnoughEnergy
   -- | Travel attempt from source to destination successful.
-  | TravelAttempt'Success loc loc
+  | TravelAttempt'Success loc loc Natural
   deriving stock (Eq)
 
 -- Travel attempt event: emits when the player tries to travel (but not when
@@ -57,5 +57,5 @@ attemptTravel location destination energy graph =
     MayTravelResult'NotEnoughEnergy ->
       Just TravelAttempt'NotEnoughEnergy
     MayTravelResult'SourceIsDestination -> Nothing
-    MayTravelResult'Success ->
-      Just (TravelAttempt'Success location destination)
+    MayTravelResult'Success distance ->
+      Just (TravelAttempt'Success location destination distance)

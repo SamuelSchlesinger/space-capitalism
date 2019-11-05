@@ -23,7 +23,7 @@ data MayTravelResult
   -- | Source *is* destination.
   | MayTravelResult'SourceIsDestination
   -- | OK!
-  | MayTravelResult'Success
+  | MayTravelResult'Success Natural
 
 mayTravel
   :: Natural
@@ -35,8 +35,8 @@ mayTravel energy l1 l2 Graph{..} =
   case distance l1 l2 of
     Just 0 -> MayTravelResult'SourceIsDestination
     Just cost ->
-      if fromIntegral energy >= cost then
-        MayTravelResult'Success
+      if energy >= cost then
+        MayTravelResult'Success (energy - cost)
       else
         MayTravelResult'NotEnoughEnergy
     _ -> MayTravelResult'NotConnected
